@@ -1,0 +1,83 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+        <div class="brand">
+     
+        <img src="{{ asset('logo.png') }}" alt="Logo" class="brand-logo" width="125">
+        <!-- <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg> -->
+      
+      <!-- <div class="brand-text">
+        <span class="brand-name">StandsWeb</span>
+        <span class="brand-sub">ERP Platform</span>
+      </div> -->
+    </div>
+    <button class="sidebar-collapse-btn" onclick="toggleSidebar()" id="sidebarToggle">
+      <i class="bi bi-layout-sidebar-reverse"></i>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav">
+    <div class="nav-panel" id="nav-developer">
+
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item {{ request()->routeIs('developer.dashboard') ? 'active' : '' }}" href="{{ route('developer.dashboard') }}">
+        <i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span>
+        <span class="nav-badge pulse">Live</span>
+      </a>
+
+      <div class="nav-section-label">Personal</div>
+      <a class="nav-item {{ request()->routeIs('developer.projects*') ? 'active' : '' }}" href="{{ route('developer.projects.index') }}">
+        <i class="bi bi-kanban-fill"></i><span>My Projects</span>
+        <span class="nav-count">{{ $projectCount }}</span>
+      </a>
+
+      <a class="nav-item {{ request()->routeIs('developer.tasks.completed*') ? 'active' : '' }}" href="{{ route('developer.tasks.completed') }}">
+        <i class="bi bi-list-task"></i><span>My Task</span>
+        <span class="nav-count">{{ $taskCount }}</span>
+      </a>
+
+      <a class="nav-item {{ request()->routeIs('developer.meetings*') ? 'active' : '' }}" href="{{ route('developer.meetings.index') }}">
+        <i class="bi bi-calendar-check"></i><span>My Meetings</span>
+      </a>
+
+      <a class="nav-item {{ request()->routeIs('developer.attendance*') ? 'active' : '' }}" href="{{ route('developer.attendance.index') }}">
+        <i class="bi bi-clock-history"></i><span>MY Attendance</span>
+        <div class="nav-dot green"></div>
+      </a>
+
+
+      <div class="nav-section-label">System</div>
+      <a class="nav-item {{ request()->routeIs('developer.account-settings*') ? 'active' : '' }}" href="{{ route('developer.account-settings') }}">
+        <i class="bi bi-gear-fill"></i><span>Settings</span>
+      </a>
+
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="theme-row">
+      <span class="theme-label"><i class="bi bi-moon-stars-fill"></i> Dark Mode</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="themeSwitch" onchange="toggleTheme()"
+          {{ session('theme', 'dark') === 'dark' ? 'checked' : '' }}>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </label>
+    </div>
+    <div class="user-profile">
+      <div class="user-ava" style="{{ auth()->user()->profile_image ? 'background:transparent;' : 'background:linear-gradient(135deg,#6366f1,#8b5cf6);' }}">
+        @if(auth()->user()->profile_image)
+            <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+        @else
+            {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 2)) }}
+        @endif
+      </div>
+      <div class="user-info">
+        <div class="user-name">{{ auth()->user()->name ?? 'Dev' }}</div>
+        <div class="user-role">{{ auth()->user()->email ?? 'Developer' }}</div>
+      </div>
+      <div class="user-status-dot"></div>
+    </div>
+  </div>
+</aside>

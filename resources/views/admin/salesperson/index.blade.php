@@ -1,0 +1,1127 @@
+@extends('admin.layout.app')
+
+@section('title', 'Add Sales Persons')
+
+@section('content')
+
+<style>
+    .multi-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .multi-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .phone-wrap {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        border: 1px solid var(--b1);
+        border-radius: var(--r-sm);
+        overflow: hidden;
+    }
+
+    .country-sel {
+        border: none;
+        border-right: 1px solid var(--b1);
+        background: var(--bg3);
+        color: var(--t2);
+        padding: 6px 4px 6px 8px;
+        font-size: 13px;
+        cursor: pointer;
+        outline: none;
+        font-family: inherit;
+        width: 100px;
+        flex-shrink: 0;
+    }
+
+    .phone-num-inp {
+        border: none;
+        padding: 6px 10px;
+        font-size: 14px;
+        font-family: inherit;
+        flex: 1;
+        min-width: 0;
+        outline: none;
+        background: transparent;
+        color: var(--t1);
+    }
+
+    .multi-email-inp {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .row-remove-btn {
+        background: none;
+        border: 1px solid var(--b2);
+        border-radius: var(--r-sm);
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        color: var(--t3);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        padding: 0;
+        transition: var(--transition);
+    }
+
+    .row-remove-btn:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+        background: rgba(239, 68, 68, .08);
+    }
+
+    /* ── Summary stat boxes ── */
+    .stat-scroll-row {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        margin-bottom: 20px;
+        scrollbar-width: none;
+    }
+
+    .stat-scroll-row::-webkit-scrollbar {
+        display: none;
+    }
+
+    .stat-box {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--bg2);
+        border: 1px solid var(--b1);
+        border-radius: var(--r);
+        padding: 11px 16px;
+        min-width: 148px;
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-box::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--sb-color);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform .25s ease;
+    }
+
+    .stat-box:hover {
+        border-color: var(--sb-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+    }
+
+    .stat-box:hover::after {
+        transform: scaleX(1);
+    }
+
+    .stat-box.active {
+        border-color: var(--sb-color);
+        background: var(--bg3);
+    }
+
+    .stat-box.active::after {
+        transform: scaleX(1);
+    }
+
+    .sb-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+        background: color-mix(in srgb, var(--sb-color) 14%, transparent);
+        color: var(--sb-color);
+    }
+
+    .sb-val {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--t1);
+        letter-spacing: -.4px;
+        line-height: 1;
+    }
+
+    .sb-lbl {
+        font-size: 11px;
+        color: var(--t3);
+        font-weight: 500;
+        margin-top: 2px;
+        white-space: nowrap;
+    }
+
+    .stat-section-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        color: var(--t4);
+        padding: 0 6px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .stat-divider {
+        width: 1px;
+        height: 40px;
+        background: var(--b2);
+        flex-shrink: 0;
+        margin: 0 4px;
+    }
+
+    /* ══════════════════════════════
+       DATE RANGE PICKER STYLES
+    ══════════════════════════════ */
+    .drp-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--bg3);
+        border: 1px solid var(--b1);
+        border-radius: var(--r-sm);
+        padding: 6px 12px;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--t2);
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: var(--font);
+        white-space: nowrap;
+        position: relative;
+    }
+
+    .drp-trigger:hover,
+    .drp-trigger.open {
+        border-color: var(--accent);
+        color: var(--t1);
+        background: var(--bg2);
+    }
+
+    .drp-trigger.open {
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, .1);
+    }
+
+    .drp-chevron {
+        font-size: 10px;
+        color: var(--t3);
+        transition: transform .2s ease;
+    }
+
+    .drp-trigger.open .drp-chevron {
+        transform: rotate(180deg);
+    }
+
+    .drp-panel {
+        position: fixed;
+        z-index: 9999;
+        display: flex;
+        background: var(--bg2);
+        border: 1px solid var(--b2);
+        border-radius: var(--r-lg);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .28), 0 4px 16px rgba(0, 0, 0, .14);
+        overflow: hidden;
+        animation: drpIn .18s cubic-bezier(.34, 1.56, .64, 1);
+        min-width: 760px;
+    }
+
+    @keyframes drpIn {
+        from {
+            opacity: 0;
+            transform: translateY(-8px) scale(.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .drp-presets {
+        width: 188px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--b1);
+        padding: 14px 10px;
+        overflow-y: auto;
+        max-height: 480px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--b2) transparent;
+    }
+
+    .drp-presets::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .drp-presets::-webkit-scrollbar-thumb {
+        background: var(--b2);
+        border-radius: 4px;
+    }
+
+    .drp-preset-group-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        color: var(--t4);
+        padding: 6px 8px 4px;
+    }
+
+    .drp-preset {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 10px;
+        border-radius: var(--r-sm);
+        font-size: 13px;
+        color: var(--t2);
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        user-select: none;
+    }
+
+    .drp-preset:hover {
+        background: var(--bg4);
+        color: var(--t1);
+    }
+
+    .drp-preset.active {
+        background: var(--accent-bg);
+        color: var(--accent);
+        font-weight: 600;
+    }
+
+    .drp-radio {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        border: 2px solid var(--b3);
+        flex-shrink: 0;
+        position: relative;
+        transition: var(--transition);
+    }
+
+    .drp-preset.active .drp-radio {
+        border-color: var(--accent);
+        background: var(--accent);
+    }
+
+    .drp-preset.active .drp-radio::after {
+        content: '';
+        position: absolute;
+        inset: 3px;
+        border-radius: 50%;
+        background: #fff;
+    }
+
+    .drp-calendars {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 16px 18px 14px;
+        min-width: 0;
+    }
+
+    .drp-cal-row {
+        display: flex;
+        gap: 24px;
+        flex: 1;
+    }
+
+    .drp-cal {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .drp-cal-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .drp-cal-title {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .drp-nav-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--r-sm);
+        background: var(--bg3);
+        border: 1px solid var(--b1);
+        color: var(--t2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 11px;
+        flex-shrink: 0;
+        transition: var(--transition);
+    }
+
+    .drp-nav-btn:hover {
+        background: var(--accent-bg);
+        color: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .drp-month-sel,
+    .drp-year-sel {
+        background: transparent;
+        border: none;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--t1);
+        cursor: pointer;
+        outline: none;
+        font-family: var(--font);
+        padding: 2px 4px;
+        border-radius: 5px;
+    }
+
+    .drp-month-sel:hover,
+    .drp-year-sel:hover {
+        background: var(--bg4);
+    }
+
+    .drp-month-sel option,
+    .drp-year-sel option {
+        background: var(--bg2);
+        color: var(--t1);
+    }
+
+    .drp-cal-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .drp-cal-table th {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--t3);
+        text-align: center;
+        padding: 4px 2px 6px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+
+    .drp-cal-table td {
+        text-align: center;
+        padding: 1.5px;
+    }
+
+    .drp-day {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--t2);
+        border-radius: 7px;
+        cursor: pointer;
+        transition: background .12s, color .12s;
+        user-select: none;
+        position: relative;
+    }
+
+    .drp-day:hover:not(.drp-day-disabled):not(.drp-day-selected) {
+        background: var(--bg4);
+        color: var(--t1);
+    }
+
+    .drp-day-disabled {
+        color: var(--t4);
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .drp-day-today {
+        font-weight: 800;
+        color: var(--accent);
+    }
+
+    .drp-day-today::after {
+        content: '';
+        position: absolute;
+        bottom: 3px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--accent);
+    }
+
+    .drp-day-selected {
+        background: var(--accent) !important;
+        color: #fff !important;
+        font-weight: 700;
+        border-radius: 7px;
+    }
+
+    .drp-day-in-range {
+        background: var(--accent-bg);
+        color: var(--accent);
+        border-radius: 0;
+    }
+
+    .drp-day-range-start {
+        background: var(--accent) !important;
+        color: #fff !important;
+        border-radius: 7px 0 0 7px !important;
+    }
+
+    .drp-day-range-end {
+        background: var(--accent) !important;
+        color: #fff !important;
+        border-radius: 0 7px 7px 0 !important;
+    }
+
+    .drp-day-range-start.drp-day-range-end {
+        border-radius: 7px !important;
+    }
+
+    .drp-compare-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--b1);
+        flex-wrap: wrap;
+    }
+
+    .drp-compare-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .drp-compare-toggle input {
+        display: none;
+    }
+
+    .drp-compare-chk {
+        width: 36px;
+        height: 20px;
+        border-radius: 20px;
+        background: var(--b2);
+        position: relative;
+        transition: var(--transition);
+        flex-shrink: 0;
+    }
+
+    .drp-compare-chk::after {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--t3);
+        top: 3px;
+        left: 3px;
+        transition: var(--transition);
+    }
+
+    .drp-compare-toggle input:checked+.drp-compare-chk {
+        background: var(--accent);
+    }
+
+    .drp-compare-toggle input:checked+.drp-compare-chk::after {
+        left: 19px;
+        background: #fff;
+    }
+
+    .drp-compare-inputs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .drp-compare-sel {
+        background: var(--bg3);
+        border: 1px solid var(--b1);
+        color: var(--t2);
+        border-radius: var(--r-sm);
+        padding: 5px 8px;
+        font-size: 12.5px;
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        font-family: var(--font);
+    }
+
+    .drp-date-inputs {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .drp-date-inp {
+        background: var(--bg3);
+        border: 1px solid var(--b1);
+        color: var(--t2);
+        border-radius: var(--r-sm);
+        padding: 5px 9px;
+        font-size: 12px;
+        font-family: var(--font);
+        width: 105px;
+        outline: none;
+    }
+
+    .drp-dash {
+        color: var(--t4);
+        font-size: 13px;
+    }
+
+    .drp-range-display {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: var(--bg3);
+        border: 1px solid var(--b1);
+        border-radius: var(--r-sm);
+    }
+
+    .drp-range-fields {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .drp-range-field {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .drp-range-lbl {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--t3);
+    }
+
+    .drp-range-val {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--t1);
+        font-family: var(--mono);
+    }
+
+    .drp-footer {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--b1);
+    }
+</style>
+
+<!-- ═══ PAGE CONTENT AREA ═══ -->
+<main class="page-area" id="pageArea">
+
+    <div class="page" id="page-dashboard">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Your All Sales Persons</h1>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn-primary-solid sm">
+                    <i class="bi bi-file-earmark-plus-fill"></i> Import
+                </button>
+                <button class="btn-primary-solid sm">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Export
+                </button>
+                <button class="btn-primary-solid sm" onclick="openModal('addSalesPersonModal')"><i class="bi bi-plus-lg"></i> Add Sales Person</button>
+            </div>
+        </div>
+
+        @if (session('success'))
+        <div style="background: #dcfce7; color: #166534; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bbf7d0; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-check-circle-fill"></i>
+            {{ session('success') }}
+        </div>
+        @endif
+
+        @if (session('error'))
+        <div style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            {{ session('error') }}
+        </div>
+        @endif
+
+        @if ($errors->any())
+        <div style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca;">
+            <ul style="margin: 0; padding-left: 20px;">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <!-- SUMMARY STAT BOXES -->
+        <div class="stat-scroll-row">
+            <div class="stat-box" style="--sb-color:#6366f1;">
+                <div class="sb-icon"><i class="bi bi-people-fill"></i></div>
+                <div>
+                    <div class="sb-val">{{ $salesPeople->count() }}</div>
+                    <div class="sb-lbl">Total Sales Person</div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- MAIN GRID -->
+        <div class="dash-grid">
+
+
+            <!-- Sales Person Table -->
+            <div class="dash-card span-12">
+                <div class="card-head mb-2">
+                    <div>
+                        <div class="card-title">Sales Persons</div>
+                        <div class="card-sub">{{ $salesPeople->count() }} total</div>
+                    </div>
+                    <div class="card-actions">
+                        <div id="bulkActions" style="display: none; align-items: center; gap: 10px; margin-right: 15px;">
+                            <span id="selectedCount" style="font-size: 13px; font-weight: 600; color: var(--accent);">0 selected</span>
+                            <button type="button" class="btn-primary-solid sm" style="background: #ef4444; border-color: #ef4444;" onclick="bulkDelete()">
+                                <i class="bi bi-trash"></i> Delete Selected
+                            </button>
+                        </div>
+                        <form class="global-search">
+                            <i class="bi bi-search"></i>
+                            <input type="text" placeholder="Search...">
+                            <button type="submit" class="btn-primary-solid sm">Search</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; padding-left: 20px;">
+                                    <input type="checkbox" id="selectAll" class="custom-checkbox" onchange="toggleAll(this)">
+                                </th>
+                                <th>SL</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($salesPeople as $index => $person)
+                            <tr>
+                                <td style="padding-left: 20px;">
+                                    <input type="checkbox" class="row-checkbox custom-checkbox" value="{{ $person->id }}" onchange="updateBulkActionState()">
+                                </td>
+                                <td>{{ $salesPeople->firstItem() + $index }}</td>
+                                <td>
+                                    <div class="lead-cell">
+                                        <div class="mini-ava" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+                                            {{ strtoupper(substr($person->name, 0, 2)) }}
+                                        </div>
+                                        <div>
+                                            <div class="ln">{{ $person->name }}</div>
+                                            <div class="ls">{{ $person->email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="src-tag website">{{ $person->email }}</span></td>
+                                <td>
+                                    <!-- Modal Btns -->
+                                    <div class="row-actions">
+                                        <button class="ra-btn" title="View KYC Details" 
+                                            data-name="{{ $person->name }}"
+                                            data-phone="{{ $person->phone ?? 'N/A' }}"
+                                            data-address="{{ $person->address ?? 'N/A' }}"
+                                            data-submitted="{{ $person->kyc_submitted ? '1' : '0' }}"
+                                            data-profile="{{ $person->profile_image ? asset('storage/' . $person->profile_image) : '' }}"
+                                            data-aadhar="{{ $person->aadhar_card ? asset('storage/' . $person->aadhar_card) : '' }}"
+                                            data-pan="{{ $person->pan_card ? asset('storage/' . $person->pan_card) : '' }}"
+                                            data-voter="{{ $person->voter_card ? asset('storage/' . $person->voter_card) : '' }}"
+                                            data-bank="{{ $person->bank_account_pic ? asset('storage/' . $person->bank_account_pic) : '' }}"
+                                            data-qual-text="{{ $person->qualification_details ?? 'N/A' }}"
+                                            data-qual-files="{{ json_encode($person->qualification_attachments ?? []) }}"
+                                            onclick="showKycDetails(this)">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </button>
+                                        <!-- <button class="ra-btn"><i class="bi bi-power"></i></button> -->
+                                        <a href="{{ route($routePrefix . '.sales-person.edit', $person->id) }}" class="ra-btn"><i class="bi bi-pencil-fill"></i></a>
+                                        <button class="ra-btn"><i class="bi bi-envelope-fill"></i></button>
+                                        <button class="ra-btn danger" onclick="deleteSalesPerson({{ $person->id }})"><i class="bi bi-trash-fill"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="table-footer">
+                    <span class="tf-info">Showing {{ $salesPeople->firstItem() ?? 0 }} to {{ $salesPeople->lastItem() ?? 0 }} of {{ $salesPeople->total() }} Sales Persons</span>
+                    <div class="tf-pagination">
+                        {{ $salesPeople->links() }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal-backdrop" id="addSalesPersonModal">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-hd"><span>Add Sales Person</span><button class="modal-close" onclick="closeModal('addSalesPersonModal')"><i class="bi bi-x-lg"></i></button></div>
+            <form action="{{ route($routePrefix . '.sales-person.store') }}" method="POST">
+                @csrf
+                <div class="modal-bd">
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label class="form-lbl">Sales Person *</label>
+                            <input type="text" name="name" class="form-inp" placeholder="Sales Person name" required>
+                        </div>
+                        <div class="form-row">
+                            <label class="form-lbl">Email *</label>
+                            <input type="email" name="email" class="form-inp" placeholder="email@company.com" required>
+                        </div>
+                        <div class="form-row">
+                            <label class="form-lbl">Set Password *</label>
+                            <input type="password" name="password" class="form-inp" value="12345" required>
+                        </div>
+                        <div class="form-row">
+                            <label class="form-lbl">Confirm Password *</label>
+                            <input type="password" name="password_confirmation" class="form-inp" value="12345" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-ft">
+                    <button type="button" class="btn-ghost" onclick="closeModal('addSalesPersonModal')">Cancel</button>
+                    <button type="submit" class="btn-primary-solid">
+                        <i class="bi bi-plus-lg"></i> Add Sales Person
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+
+    <!-- Delete Modal -->
+    <div class="modal-backdrop" id="deleteSalesPersonModal">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-hd" style="border-bottom:1px solid #fecaca;">
+                <span style="color:#dc2626;">Delete Sales Person</span>
+                <button class="modal-close" onclick="closeModal('deleteSalesPersonModal')"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <form id="deleteSalesPersonForm" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="modal-bd" style="text-align:center;padding:32px 24px;">
+                    <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="bi bi-trash3-fill" style="font-size:28px;color:#dc2626;"></i>
+                    </div>
+                    <h3 style="margin:0 0 8px;font-size:18px;font-weight:600;color:#111827;">Are you sure?</h3>
+                    <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">Are you sure you want to delete this Sales Person?<br>This action <strong style="color:#dc2626;">cannot be undone.</strong></p>
+                </div>
+                <div class="modal-ft" style="border-top:1px solid #fecaca;">
+                    <button type="button" class="btn-ghost" onclick="closeModal('deleteSalesPersonModal')">Cancel</button>
+                    <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                        <i class="bi bi-trash3-fill"></i> Delete Sales Person
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+
+        function deleteSalesPerson(id) {
+            document.getElementById('deleteSalesPersonForm').action = `{{ url($routePrefix . '/add-sales-person') }}/${id}`;
+            openModal('deleteSalesPersonModal');
+        }
+
+        function toggleAll(source) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateBulkActionState();
+        }
+
+        function updateBulkActionState() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            const selectAll = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('.row-checkbox');
+
+            if (checkboxes.length > 0) {
+                bulkActions.style.display = 'flex';
+                selectedCount.innerText = checkboxes.length + ' selected';
+            } else {
+                bulkActions.style.display = 'none';
+            }
+
+            if (checkboxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+                selectAll.checked = true;
+            } else {
+                selectAll.checked = false;
+            }
+        }
+
+        function bulkDelete() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            if (checkboxes.length === 0) return;
+
+            if (confirm(`Are you sure you want to delete ${checkboxes.length} Sales Persons?`)) {
+                const ids = Array.from(checkboxes).map(cb => cb.value);
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `{{ route($routePrefix . '.sales-person.bulk-destroy') }}`;
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+                form.appendChild(csrf);
+
+                ids.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ids[]';
+                    input.value = id;
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+
+    <!-- KYC Details Modal -->
+    <div class="modal fade" id="kycModal" tabindex="-1" aria-labelledby="kycModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; background: var(--bg2); color: var(--t1);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--b1); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h5 class="modal-title" id="kycModalLabel" style="font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; margin: 0;">
+                        <i class="bi bi-shield-check" style="color: var(--accent); font-size: 20px;"></i>
+                        KYC Verification Profile
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="background: none; border: none; color: var(--t3); font-size: 20px; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <div style="display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: start;">
+                        <!-- Left: Profile pic and status -->
+                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; background: var(--bg3); padding: 20px; border-radius: 12px; border: 1px solid var(--b1);">
+                            <img id="kycProfileImage" src="" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--b2); background: var(--bg2);" alt="Profile Image">
+                            <div>
+                                <h4 id="kycName" style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0;"></h4>
+                                <div id="kycStatusBadge"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right: Info columns -->
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--t4); display: block; margin-bottom: 4px;">Phone Number</label>
+                                    <span id="kycPhone" style="font-size: 14px; font-weight: 600;"></span>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--t4); display: block; margin-bottom: 4px;">Address</label>
+                                    <span id="kycAddress" style="font-size: 14px; font-weight: 600;"></span>
+                                </div>
+                            </div>
+                            
+                            <div style="border-top: 1px solid var(--b1); padding-top: 16px;">
+                                <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--t4); display: block; margin-bottom: 12px;">KYC Document Proofs</label>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                                    <!-- Aadhar -->
+                                    <div id="kycAadharBox" style="text-align: center; background: var(--bg3); padding: 12px; border-radius: 8px; border: 1px solid var(--b1); display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center;">
+                                        <span style="font-size: 11px; font-weight: 700;">Aadhar Card</span>
+                                        <a id="kycAadharLink" href="" target="_blank" style="display: none;">
+                                            <img id="kycAadharThumb" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--b2);">
+                                            <span id="kycAadharPdf" class="btn-ghost sm" style="display: none; padding: 4px 8px; color: #ef4444; background: rgba(239, 68, 68, 0.1); border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</span>
+                                        </a>
+                                        <span id="kycAadharMissing" style="color: var(--t4); font-style: italic; font-size: 12px;">Not Uploaded</span>
+                                    </div>
+                                    
+                                    <!-- PAN -->
+                                    <div id="kycPanBox" style="text-align: center; background: var(--bg3); padding: 12px; border-radius: 8px; border: 1px solid var(--b1); display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center;">
+                                        <span style="font-size: 11px; font-weight: 700;">PAN Card</span>
+                                        <a id="kycPanLink" href="" target="_blank" style="display: none;">
+                                            <img id="kycPanThumb" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--b2);">
+                                            <span id="kycPanPdf" class="btn-ghost sm" style="display: none; padding: 4px 8px; color: #ef4444; background: rgba(239, 68, 68, 0.1); border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</span>
+                                        </a>
+                                        <span id="kycPanMissing" style="color: var(--t4); font-style: italic; font-size: 12px;">Not Uploaded</span>
+                                    </div>
+                                    
+                                    <!-- Voter Card -->
+                                    <div id="kycVoterBox" style="text-align: center; background: var(--bg3); padding: 12px; border-radius: 8px; border: 1px solid var(--b1); display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center;">
+                                        <span style="font-size: 11px; font-weight: 700;">Voter Card</span>
+                                        <a id="kycVoterLink" href="" target="_blank" style="display: none;">
+                                            <img id="kycVoterThumb" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--b2);">
+                                            <span id="kycVoterPdf" class="btn-ghost sm" style="display: none; padding: 4px 8px; color: #ef4444; background: rgba(239, 68, 68, 0.1); border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</span>
+                                        </a>
+                                        <span id="kycVoterMissing" style="color: var(--t4); font-style: italic; font-size: 12px;">Not Uploaded</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--b1); padding-top: 16px;">
+                                <!-- Bank Account -->
+                                <div style="background: var(--bg3); padding: 16px; border-radius: 10px; border: 1px solid var(--b1); display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center; justify-content: center;">
+                                    <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--t4); margin: 0;">Bank Account Proof</label>
+                                    <a id="kycBankLink" href="" target="_blank" style="display: none;">
+                                        <img id="kycBankThumb" src="" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--b2);">
+                                        <span id="kycBankPdf" class="btn-ghost sm" style="display: none; padding: 4px 8px; color: #ef4444; background: rgba(239, 68, 68, 0.1); border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none;"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</span>
+                                    </a>
+                                    <span id="kycBankMissing" style="color: var(--t4); font-style: italic; font-size: 12px;">Not Uploaded</span>
+                                </div>
+
+                                <!-- Qualifications -->
+                                <div style="background: var(--bg3); padding: 16px; border-radius: 10px; border: 1px solid var(--b1); display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--t4); text-align: center; margin: 0;">Qualifications</label>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--t2); text-align: center;" id="kycQualificationText"></div>
+                                    <div id="kycAttachmentsArea" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showKycDetails(btn) {
+            const name = btn.getAttribute('data-name');
+            const phone = btn.getAttribute('data-phone');
+            const address = btn.getAttribute('data-address');
+            const submitted = btn.getAttribute('data-submitted') === '1';
+            const profile = btn.getAttribute('data-profile');
+            const aadhar = btn.getAttribute('data-aadhar');
+            const pan = btn.getAttribute('data-pan');
+            const voter = btn.getAttribute('data-voter');
+            const bank = btn.getAttribute('data-bank');
+            const qualText = btn.getAttribute('data-qual-text');
+            const qualFiles = JSON.parse(btn.getAttribute('data-qual-files') || '[]');
+
+            document.getElementById('kycName').innerText = name;
+            document.getElementById('kycPhone').innerText = phone;
+            document.getElementById('kycAddress').innerText = address;
+            document.getElementById('kycQualificationText').innerText = qualText;
+
+            // Profile Image
+            const profileImg = document.getElementById('kycProfileImage');
+            profileImg.src = profile ? profile : 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+
+            // Status Badge
+            const statusBadge = document.getElementById('kycStatusBadge');
+            if (submitted) {
+                statusBadge.innerHTML = `<span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:4px; background:rgba(16,185,129,0.15); color:#10b981; text-transform:uppercase;">Verified</span>`;
+            } else {
+                statusBadge.innerHTML = `<span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:4px; background:rgba(239,68,68,0.15); color:#ef4444; text-transform:uppercase;">Not Verified</span>`;
+            }
+
+            // Helper function to setup documents
+            function setupDoc(linkId, thumbId, pdfId, missingId, fileUrl) {
+                const link = document.getElementById(linkId);
+                const thumb = document.getElementById(thumbId);
+                const pdfBadge = document.getElementById(pdfId);
+                const missing = document.getElementById(missingId);
+
+                if (fileUrl) {
+                    link.href = fileUrl;
+                    link.style.display = 'block';
+                    missing.style.display = 'none';
+
+                    const isPdf = fileUrl.toLowerCase().endsWith('.pdf');
+                    if (isPdf) {
+                        thumb.style.display = 'none';
+                        pdfBadge.style.display = 'inline-flex';
+                    } else {
+                        thumb.src = fileUrl;
+                        thumb.style.display = 'block';
+                        pdfBadge.style.display = 'none';
+                    }
+                } else {
+                    link.style.display = 'none';
+                    missing.style.display = 'block';
+                }
+            }
+
+            setupDoc('kycAadharLink', 'kycAadharThumb', 'kycAadharPdf', 'kycAadharMissing', aadhar);
+            setupDoc('kycPanLink', 'kycPanThumb', 'kycPanPdf', 'kycPanMissing', pan);
+            setupDoc('kycVoterLink', 'kycVoterThumb', 'kycVoterPdf', 'kycVoterMissing', voter);
+            setupDoc('kycBankLink', 'kycBankThumb', 'kycBankPdf', 'kycBankMissing', bank);
+
+            // Qualification Attachments Area
+            const attachmentsArea = document.getElementById('kycAttachmentsArea');
+            attachmentsArea.innerHTML = '';
+            if (qualFiles && qualFiles.length > 0) {
+                qualFiles.forEach((file, idx) => {
+                    const fileUrl = `/storage/${file}`;
+                    const isPdf = file.toLowerCase().endsWith('.pdf');
+                    const link = document.createElement('a');
+                    link.href = fileUrl;
+                    link.target = '_blank';
+                    link.title = `Attachment ${idx + 1}`;
+                    link.style.textDecoration = 'none';
+
+                    if (isPdf) {
+                        link.innerHTML = `<span class="btn-ghost sm" style="padding: 4px 8px; color: #ef4444; background: rgba(239, 68, 68, 0.1); border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-file-earmark-pdf-fill"></i> Att ${idx + 1}</span>`;
+                    } else {
+                        link.innerHTML = `<img src="${fileUrl}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--b2);" alt="Attachment">`;
+                    }
+                    attachmentsArea.appendChild(link);
+                });
+            } else {
+                attachmentsArea.innerHTML = `<span style="color: var(--t4); font-style: italic; font-size: 12px;">No Attachments</span>`;
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('kycModal'));
+            modal.show();
+        }
+    </script>
+</main>
+
+@endsection

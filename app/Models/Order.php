@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Order extends Model
+{
+    protected $fillable = [
+        'order_number', 'lead_id', 'inquiry_id', 'company_name', 'client_name', 'username', 'password', 'emails', 'phones',
+        'domain_name', 'service_id', 'order_value', 'discount', 'advance_payment', 'payment_terms_id',
+        'delivery_date', 'renewal_date', 'city', 'state', 'zip_code', 'full_address',
+        'status_id', 'is_marketing', 'mkt_payment_status_id',
+        'mkt_starting_date', 'plan_name', 'mkt_username', 'mkt_password',
+        'created_by', 'created_by_type', 'notes'
+    ];
+
+    public function notes_history()
+    {
+        return $this->hasMany(OrderNote::class)->latest();
+    }
+
+    protected $casts = [
+        'emails' => 'array',
+        'phones' => 'array',
+        'is_marketing' => 'boolean',
+        'mkt_starting_date' => 'date',
+        'delivery_date' => 'date',
+        'renewal_date' => 'date',
+    ];
+
+    public function lead()
+    {
+        return $this->belongsTo(Lead::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->morphTo(null, 'created_by_type', 'created_by');
+    }
+
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'order_service');
+    }
+
+    public function sources()
+    {
+        return $this->belongsToMany(Source::class, 'order_source');
+    }
+    
+    public function plans()
+    {
+        return $this->belongsToMany(Plan::class, 'order_plan');
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class);
+    }
+
+    public function paymentTerms()
+    {
+        return $this->belongsTo(Status::class, 'payment_terms_id');
+    }
+
+    public function mktPaymentStatus()
+    {
+        return $this->belongsTo(Status::class, 'mkt_payment_status_id');
+    }
+
+    public function assignments()
+    {
+        return $this->hasMany(OrderAssign::class);
+    }
+
+    public function sales()
+    {
+        return $this->belongsToMany(Sale::class, 'order_assigns', 'order_id', 'assigned_to');
+    }
+
+    public function followups()
+    {
+        return $this->morphMany(Followup::class, 'followable')->latest();
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+}

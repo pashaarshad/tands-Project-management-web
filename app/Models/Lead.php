@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Lead extends Model
+{
+    protected $fillable = [
+        'company', 'contact_person', 'business_type', 'emails', 'phones',
+        'address', 'state', 'zip_code', 'service_id', 'source_id', 'status_id', 'campaign_id',
+        'priority', 'created_by', 'created_by_type', 'notes', 'is_losted',
+    ];
+
+    protected $casts = [
+        'emails' => 'array',
+        'phones' => 'array',
+    ];
+
+    public function assignments()
+    {
+        return $this->hasMany(LeadAssign::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->morphTo(null, 'created_by_type', 'created_by');
+    }
+
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'lead_service');
+    }
+
+    public function sources()
+    {
+        return $this->belongsToMany(Source::class, 'lead_source');
+    }
+
+    public function campaign()
+    {
+        return $this->belongsTo(Campaign::class);
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class);
+    }
+
+    public function followups()
+    {
+        return $this->morphMany(Followup::class, 'followable')->latest();
+    }
+
+    public function notes_history()
+    {
+        return $this->hasMany(LeadNote::class)->latest();
+    }
+}

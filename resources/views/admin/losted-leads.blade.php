@@ -1,0 +1,1893 @@
+@extends('admin.layout.app')
+
+@section('title', 'Losted Leads')
+
+@section('content')
+
+<style>
+    .multi-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .multi-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .phone-wrap {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        border: 1px solid var(--b1);
+        border-radius: var(--r-sm);
+        overflow: hidden;
+    }
+
+    .country-sel {
+        border: none;
+        border-right: 1px solid var(--b1);
+        background: var(--bg3);
+        color: var(--t2);
+        padding: 6px 4px 6px 8px;
+        font-size: 13px;
+        cursor: pointer;
+        outline: none;
+        font-family: inherit;
+        width: 100px;
+        flex-shrink: 0;
+    }
+
+    .phone-num-inp {
+        border: none;
+        padding: 6px 10px;
+        font-size: 14px;
+        font-family: inherit;
+        flex: 1;
+        min-width: 0;
+        outline: none;
+        background: transparent;
+        color: var(--t1);
+    }
+
+    .multi-email-inp {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .row-remove-btn {
+        background: none;
+        border: 1px solid var(--b2);
+        border-radius: var(--r-sm);
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        color: var(--t3);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        padding: 0;
+        transition: var(--transition);
+    }
+
+    .row-remove-btn:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+        background: rgba(239, 68, 68, .08);
+    }
+
+    /* ── 6-column uniform grid ── */
+    .stat-grid-wrap {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    @media (max-width: 1200px) {
+        .stat-grid-wrap {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @media (max-width: 860px) {
+        .stat-grid-wrap {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 560px) {
+        .stat-grid-wrap {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .stat-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--bg2);
+        border: 1px solid var(--b1);
+        border-radius: var(--r);
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        min-width: 0;
+    }
+
+    .stat-box::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--sb-color);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform .25s ease;
+    }
+
+    .stat-box:hover {
+        border-color: var(--sb-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+    }
+
+    .stat-box:hover::after {
+        transform: scaleX(1);
+    }
+
+    .stat-box.active {
+        border-color: var(--sb-color);
+        background: var(--bg3);
+    }
+
+    .stat-box.active::after {
+        transform: scaleX(1);
+    }
+
+    .sb-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+        background: color-mix(in srgb, var(--sb-color) 14%, transparent);
+        color: var(--sb-color);
+    }
+
+    .sb-content {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .sb-val {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--t1);
+        letter-spacing: -.3px;
+        line-height: 1.1;
+    }
+
+    .sb-lbl {
+        font-size: 11px;
+        color: var(--t3);
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+
+</style>
+
+
+<!-- ═══ PAGE CONTENT AREA ═══ -->
+<main class="page-area" id="pageArea">
+
+    <div class="page" id="page-dashboard">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Losted Leads</h1>
+            </div>
+            <div class="d-flex gap-2">
+                @if($routePrefix == 'admin')
+                <button type="button" class="btn-primary-solid sm" id="bulkDeleteLeadsBtn" style="display: none; background: #dc2626; border-color: #dc2626; color: white;" onclick="bulkDeleteSelectedLeads()">
+                    <i class="bi bi-trash-fill"></i> Bulk Delete
+                </button>
+                
+                <button type="button" class="btn-primary-solid sm" onclick="exportLostedLeads()">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Export
+                </button>
+                @endif
+            </div>
+        </div>
+
+        <!-- SUMMARY STAT BOXES -->
+        <div id="statsWrap" class="stat-grid-wrap">
+            <div class="stat-box" style="--sb-color:#ef4444;">
+                <div class="sb-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="sb-content">
+                    <div class="sb-val">{{ $totalLostLeads }}</div>
+                    <div class="sb-lbl">Total Losted Leads</div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- MAIN GRID -->
+        <div class="dash-grid">
+            <div class="dash-card span-12">
+                <div class="card-head">
+                    <div>
+                        <div class="card-title">Losted Lead Pipeline</div>
+                        <div class="card-sub" id="tableSub">{{ $leads->count() }} total leads identified as lost</div>
+                    </div>
+                    <div class="card-actions mb-2">
+                        <form action="{{ route($routePrefix . '.losted-leads') }}" method="GET" class="card-actions mb-0">
+                             <div class="global-search">
+                                 <i class="bi bi-search"></i>
+                                 <input type="text" name="q" id="searchQuery" value="{{ request('q') }}" placeholder="Search...">
+                                 <button type="submit" class="btn-primary-solid sm" style="display:none;">Search</button>
+                             </div>
+
+                             <select name="source_id" class="filter-select" onchange="updateFilters()">
+                                 <option value="">Lead Source</option>
+                                 @foreach($sources as $source)
+                                     <option value="{{ $source->id }}" {{ request('source_id') == $source->id ? 'selected' : '' }}>{{ $source->name }}</option>
+                                 @endforeach
+                             </select>
+
+                             <select name="service_id" class="filter-select" onchange="updateFilters()">
+                                 <option value="">All Services</option>
+                                 @foreach($services as $service)
+                                     <option value="{{ $service->id }}" {{ request('service_id') == $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
+                                 @endforeach
+                             </select>
+
+                             <select name="priority" class="filter-select" onchange="updateFilters()">
+                                 <option value="">Priority</option>
+                                 <option value="Hot 🔥" {{ request('priority') == 'Hot 🔥' ? 'selected' : '' }}>Hot 🔥</option>
+                                 <option value="Warm" {{ request('priority') == 'Warm' ? 'selected' : '' }}>Warm</option>
+                                 <option value="Cold" {{ request('priority') == 'Cold' ? 'selected' : '' }}>Cold</option>
+                             </select>
+                             <select name="assigned_to" class="filter-select" onchange="updateFilters()">
+                                 <option value="">Assign To</option>
+                                 @foreach($sales as $sale)
+                                     <option value="{{ $sale->id }}" {{ request('assigned_to') == $sale->id ? 'selected' : '' }}>{{ $sale->name }}</option>
+                                 @endforeach
+                             </select>
+                             <select name="per_page" class="filter-select" onchange="updateFilters()">
+                                <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10 Rows</option>
+                                <option value="20" {{ (request('per_page') == 20 || !request('per_page')) ? 'selected' : '' }}>20 Rows</option>
+                                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50 Rows</option>
+                                <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100 Rows</option>
+                                <option value="all" {{ request('per_page') == 'all' ? 'selected' : '' }}>All Rows</option>
+                             </select>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="tableWrap">
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                @if($routePrefix == 'admin')
+                                <th style="width: 40px; text-align: center;">
+                                    <input type="checkbox" id="selectAllLeads" onclick="toggleAllLeads(this)" style="cursor: pointer;">
+                                
+                                </th>
+                                @endif
+                                <th>SL</th>
+                                <th>Lead</th>
+                                <th>Source</th>
+                                <th>Contact Person</th>
+                                <th>Service Need</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Created By</th>
+                                <th>Assign To</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($leads as $index => $lead)
+                            <tr>
+                                @if($routePrefix == 'admin')
+                                <td style="text-align: center;">
+                                    <input type="checkbox" class="lead-checkbox" name="lead_ids[]" value="{{ $lead->id }}" onclick="updateBulkDeleteButtonLeads()" style="cursor: pointer;">
+                                    
+                                </td>
+                                @endif
+                                <td>{{ $loop->iteration + ($leads->currentPage() - 1) * $leads->perPage() }}</td>
+                                <td>
+                                    <div class="lead-cell">
+                                        @php
+                                            $initials = strtoupper(substr($lead->company, 0, 1) . substr($lead->contact_person, 0, 1));
+                                            $emails = is_array($lead->emails) ? ($lead->emails[0] ?? 'N/A') : (json_decode($lead->emails)[0] ?? 'N/A');
+                                        @endphp
+                                        <div class="mini-ava" style="background:linear-gradient(135deg,#6366f1,#06b6d4)">{{ $initials }}</div>
+                                        <div>
+                                            <div class="ln">{{ $lead->company }}</div>
+                                            <div class="ls">{{ $emails }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="src-tag">{{ $lead->source->name ?? 'N/A' }}</span></td>
+                                <td><strong style="color:var(--t2)">{{ $lead->contact_person }}</strong></td>
+                                <td><strong style="color:var(--t2)">{{ $lead->service->name ?? 'N/A' }}</strong></td>
+                                <td>
+                                    @php
+                                        $pCls = strtolower(str_replace([' ', '🔥'], '', $lead->priority));
+                                    @endphp
+                                    <span class="lead-stage {{ $pCls }}">{{ $lead->priority }}</span>
+                                </td>
+                                <td><strong style="color:var(--accent)">{{ $lead->status->name ?? 'N/A' }}</strong></td>
+                                <td>
+                                    @if($lead->createdBy instanceof \App\Models\Admin)
+                                        <div class="ln">System</div>
+                                    @elseif($lead->createdBy)
+                                        <div class="ln">{{ $lead->createdBy->name }}</div>
+                                        <div class="ls">{{ $lead->createdBy->email }}</div>
+                                    @else
+                                        <div class="ln">System</div>
+                                    @endif
+                                </td>
+                                <td>
+                                    @foreach($lead->assignments as $assign)
+                                        <div class="ln">{{ $assign->sale->name ?? 'N/A' }} - {{ $assign->sale->email ?? 'N/A' }}</div>
+                                    @endforeach
+                                    @if($lead->assignments->isEmpty())
+                                        <span style="color:var(--t4)">Unassigned</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a href="{{ route($routePrefix . '.losted-leads.show', $lead->id) }}" class="ra-btn" title="View"><i class="bi bi-eye-fill"></i></a>
+                                        <a href="{{ route($routePrefix . '.leads.followup', $lead->id) }}" class="ra-btn" title="Followup"><i class="bi bi-arrow-counterclockwise"></i></a>
+                                        <a class="ra-btn" title="Edit" href="{{ route($routePrefix . '.leads.edit', $lead->id) }}"><i class="bi bi-pencil-fill"></i></a>
+                                        @if($routePrefix == 'admin')
+                                        <button class="ra-btn danger" title="Delete" onclick="confirmDelete('{{ route($routePrefix . '.leads.destroy', $lead->id) }}')"><i class="bi bi-trash-fill"></i></button>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="11" style="text-align:center;padding:40px;color:var(--t4);">No lost leads found.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer">
+                    <span class="tf-info">Total Losted Leads: {{ $totalLostLeads }}</span>
+                    <div class="tf-pagination">
+                        {{ $leads->links('admin.includes.pagination') }}
+                    </div>
+                    <div class="tf-per-page"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+</main>
+
+
+<!-- BULK DELETE MODAL -->
+<div class="modal-backdrop" id="bulkDeleteLeadsModal">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-hd" style="border-bottom:1px solid #fecaca;">
+            <span style="color:#dc2626;">Bulk Delete Leads</span>
+            <button class="modal-close" onclick="closeModal('bulkDeleteLeadsModal')"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-bd" style="text-align:center;padding:32px 24px;">
+            <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i class="bi bi-trash3-fill" style="font-size:28px;color:#dc2626;"></i>
+            </div>
+            <h3 style="margin:0 0 8px;font-size:18px;font-weight:600;color:var(--t1);">Delete Selected Leads?</h3>
+            <p style="margin:0;font-size:14px;color:var(--t3);line-height:1.6;">Are you sure you want to delete <strong id="bulkDeleteLeadsCount">0</strong> selected leads?<br>This action <strong style="color:#dc2626;">cannot be undone.</strong></p>
+        </div>
+        <div class="modal-ft" style="border-top:1px solid #fecaca;">
+            <button class="btn-ghost" onclick="closeModal('bulkDeleteLeadsModal')">Cancel</button>
+            <button id="executeBulkDeleteLeadsBtn" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;" onclick="executeBulkDeleteLeads()">
+                <i class="bi bi-trash3-fill"></i> Confirm Bulk Deletion
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- SINGLE DELETE MODAL --}}
+<div class="modal-backdrop" id="deleteModal">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-hd" style="border-bottom:1px solid #fecaca;">
+            <span style="color:#dc2626;">Delete Losted Lead</span>
+            <button class="modal-close" onclick="closeModal('deleteModal')"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-bd" style="text-align:center;padding:32px 24px;">
+            <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i class="bi bi-trash3-fill" style="font-size:28px;color:#dc2626;"></i>
+            </div>
+            <h3 style="margin:0 0 8px;font-size:18px;font-weight:600;color:var(--t1);">Delete permanently?</h3>
+            <p style="margin:0;font-size:14px;color:var(--t3);line-height:1.6;">Are you sure you want to delete this lost lead record?<br>This action <strong style="color:#dc2626;">cannot be undone.</strong></p>
+        </div>
+        <div class="modal-ft" style="border-top:1px solid #fecaca;">
+            <button class="btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+            <button style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;" onclick="document.getElementById('deleteLeadForm').submit()">
+                <i class="bi bi-trash3-fill"></i> Confirm Deletion
+            </button>
+        </div>
+    </div>
+</div>
+
+<form id="deleteLeadForm" action="" method="POST" style="display:none;">
+    @csrf
+    @method('DELETE')
+</form>
+
+<script>
+    function confirmDelete(url) {
+        const form = document.getElementById('deleteLeadForm');
+        form.action = url;
+        openModal('deleteModal');
+    }
+
+    function toggleAllLeads(source) {
+        const checkboxes = document.querySelectorAll('.lead-checkbox');
+        checkboxes.forEach(cb => cb.checked = source.checked);
+        updateBulkDeleteButtonLeads();
+    }
+
+    function updateBulkDeleteButtonLeads() {
+        const checkedCount = document.querySelectorAll('.lead-checkbox:checked').length;
+        const bulkBtn = document.getElementById('bulkDeleteLeadsBtn');
+        if (bulkBtn) {
+            if (checkedCount > 0) {
+                bulkBtn.style.display = 'inline-flex';
+            } else {
+                bulkBtn.style.display = 'none';
+            }
+        }
+    }
+
+    function bulkDeleteSelectedLeads() {
+        const checkedBoxes = document.querySelectorAll('.lead-checkbox:checked');
+        if (checkedBoxes.length === 0) return;
+
+        document.getElementById('bulkDeleteLeadsCount').innerText = checkedBoxes.length;
+        openModal('bulkDeleteLeadsModal');
+    }
+
+    function executeBulkDeleteLeads() {
+        const checkedBoxes = document.querySelectorAll('.lead-checkbox:checked');
+        if (checkedBoxes.length === 0) return;
+
+        const executeBtn = document.getElementById('executeBulkDeleteLeadsBtn');
+        if (executeBtn) {
+            executeBtn.disabled = true;
+            executeBtn.innerText = 'Deleting...';
+        }
+
+        const ids = Array.from(checkedBoxes).map(cb => cb.value);
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ route($routePrefix . '.leads.bulk-destroy') }}";
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = "{{ csrf_token() }}";
+        form.appendChild(csrfInput);
+        
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+
+        ids.forEach(id => {
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'ids[]';
+            idInput.value = id;
+            form.appendChild(idInput);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // DATE RANGE LISTENER
+    document.addEventListener('dateRangeApplied', function(e) {
+        const start = e.detail.start;
+        const end = e.detail.end;
+        if (start && end) {
+            // Function to format as YYYY-MM-DD
+            function formatDate(date) {
+                let d = new Date(date),
+                    month = '' + (d.getMonth() + 1),
+                    day = '' + d.getDate(),
+                    year = d.getFullYear();
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+                return [year, month, day].join('-');
+            }
+            
+            document.getElementById('startDateInp').value = formatDate(start);
+            document.getElementById('endDateInp').value = formatDate(end);
+            updateFilters();
+        }
+    });
+
+    window.updateFilters = function() {
+        const form = document.querySelector('.card-actions form') || document.querySelector('.card-actions');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+        const url = new URL(window.location.pathname, window.location.origin);
+        url.search = params.toString();
+        fetchAndReplace(url);
+    };
+
+    async function fetchAndReplace(url) {
+        const tableWrap = document.getElementById('tableWrap');
+        const statsWrap = document.getElementById('statsWrap');
+        if (tableWrap) tableWrap.style.opacity = '0.5';
+
+        try {
+            const response = await fetch(url.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            const newTable = doc.getElementById('tableWrap');
+            if (newTable && tableWrap) {
+                tableWrap.innerHTML = newTable.innerHTML;
+            }
+            
+            const newStats = doc.getElementById('statsWrap');
+            if (newStats && statsWrap) {
+                statsWrap.innerHTML = newStats.innerHTML;
+            }
+
+            if (tableWrap) tableWrap.style.opacity = '1';
+            window.history.pushState({}, '', url);
+        } catch (error) {
+            console.error('AJAX error:', error);
+            if (tableWrap) tableWrap.style.opacity = '1';
+        }
+    }
+
+    let debounceTimer;
+    document.addEventListener('input', function(e) {
+        if (e.target && e.target.id === 'searchQuery') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updateFilters, 500);
+        }
+    });
+
+    // Intercept pagination clicks
+    document.addEventListener('click', function(e) {
+        const paginationLink = e.target.closest('.tf-pagination a');
+        if (paginationLink) {
+            e.preventDefault();
+            fetchAndReplace(new URL(paginationLink.href));
+        }
+    });
+</script>
+
+<script>
+    /* ═══════════════════════════════════════════
+   DATE RANGE PICKER LOGIC
+═══════════════════════════════════════════ */
+    (function() {
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let view1 = new Date(today.getFullYear(), today.getMonth(), 1);
+        let view2 = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        let rangeStart = null,
+            rangeEnd = null,
+            hoverDate = null;
+        let selecting = false,
+            activePreset = 'last7';
+
+        function fmt(d) {
+            return d ? d.getDate() + ' ' + MONTHS_SHORT[d.getMonth()] + ' ' + d.getFullYear() : '—';
+        }
+
+        function sameDay(a, b) {
+            return a && b && a.toDateString() === b.toDateString();
+        }
+
+        function between(d, a, b) {
+            return a && b && d > a && d < b;
+        }
+
+        function clone(d) {
+            return d ? new Date(d.getTime()) : null;
+        }
+
+        const presetMap = {
+            today: () => {
+                const d = clone(today);
+                return [d, d];
+            },
+            yesterday: () => {
+                const d = new Date(today);
+                d.setDate(d.getDate() - 1);
+                return [d, d];
+            },
+            today_yesterday: () => {
+                const a = new Date(today);
+                a.setDate(a.getDate() - 1);
+                return [a, clone(today)];
+            },
+            last7: () => {
+                const a = new Date(today);
+                a.setDate(a.getDate() - 6);
+                return [a, clone(today)];
+            },
+            last14: () => {
+                const a = new Date(today);
+                a.setDate(a.getDate() - 13);
+                return [a, clone(today)];
+            },
+            last28: () => {
+                const a = new Date(today);
+                a.setDate(a.getDate() - 27);
+                return [a, clone(today)];
+            },
+            last30: () => {
+                const a = new Date(today);
+                a.setDate(a.getDate() - 29);
+                return [a, clone(today)];
+            },
+            this_week: () => {
+                const a = new Date(today);
+                a.setDate(a.getDate() - a.getDay());
+                return [a, clone(today)];
+            },
+            last_week: () => {
+                const a = new Date(today);
+                a.setDate(a.getDate() - a.getDay() - 7);
+                const b = new Date(a);
+                b.setDate(b.getDate() + 6);
+                return [a, b];
+            },
+            this_month: () => [new Date(today.getFullYear(), today.getMonth(), 1), clone(today)],
+            last_month: () => [new Date(today.getFullYear(), today.getMonth() - 1, 1), new Date(today.getFullYear(), today.getMonth(), 0)],
+            this_year: () => [new Date(today.getFullYear(), 0, 1), clone(today)],
+            custom: () => [null, null],
+        };
+
+        const presetLabels = {
+            today: 'Today',
+            yesterday: 'Yesterday',
+            today_yesterday: 'Today & Yesterday',
+            last7: 'Last 7 Days',
+            last14: 'Last 14 Days',
+            last28: 'Last 28 Days',
+            last30: 'Last 30 Days',
+            this_week: 'This Week',
+            last_week: 'Last Week',
+            this_month: 'This Month',
+            last_month: 'Last Month',
+            this_year: 'This Year',
+            custom: 'Custom Range',
+        };
+
+        function populateSelects() {
+            ['month1Sel', 'month2Sel'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel || sel.options.length) return;
+                MONTHS.forEach((m, i) => {
+                    const o = document.createElement('option');
+                    o.value = i;
+                    o.textContent = m;
+                    sel.appendChild(o);
+                });
+            });
+            ['year1Sel', 'year2Sel'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel || sel.options.length) return;
+                for (let y = today.getFullYear() - 10; y <= today.getFullYear() + 2; y++) {
+                    const o = document.createElement('option');
+                    o.value = y;
+                    o.textContent = y;
+                    sel.appendChild(o);
+                }
+            });
+        }
+
+        function syncSelects() {
+            document.getElementById('month1Sel').value = view1.getMonth();
+            document.getElementById('year1Sel').value = view1.getFullYear();
+            document.getElementById('month2Sel').value = view2.getMonth();
+            document.getElementById('year2Sel').value = view2.getFullYear();
+        }
+
+        function renderCal(tableId, viewDate) {
+            const tbl = document.getElementById(tableId);
+            tbl.innerHTML = '';
+            const thead = document.createElement('thead');
+            const hRow = document.createElement('tr');
+            DAYS.forEach(d => {
+                const th = document.createElement('th');
+                th.textContent = d;
+                hRow.appendChild(th);
+            });
+            thead.appendChild(hRow);
+            tbl.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            const year = viewDate.getFullYear(),
+                month = viewDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let day = 1,
+                row = document.createElement('tr');
+            for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement('td'));
+
+            while (day <= daysInMonth) {
+                const cell = document.createElement('td');
+                const d = new Date(year, month, day);
+                const span = document.createElement('span');
+                span.className = 'drp-day';
+                span.textContent = day;
+                span.dataset.ts = d.getTime();
+
+                if (sameDay(d, today)) span.classList.add('drp-day-today');
+
+                const effEnd = hoverDate && selecting && !rangeEnd ? (hoverDate >= rangeStart ? hoverDate : rangeStart) : rangeEnd;
+                const effStart = hoverDate && selecting && !rangeEnd ? (hoverDate < rangeStart ? hoverDate : rangeStart) : rangeStart;
+
+                if (sameDay(d, effStart) && sameDay(d, effEnd)) span.classList.add('drp-day-selected', 'drp-day-range-start', 'drp-day-range-end');
+                else if (sameDay(d, effStart)) span.classList.add('drp-day-range-start');
+                else if (sameDay(d, effEnd)) span.classList.add('drp-day-range-end');
+                else if (effStart && effEnd && between(d, effStart, effEnd)) span.classList.add('drp-day-in-range');
+
+                span.addEventListener('click', onDayClick);
+                span.addEventListener('mouseenter', onDayHover);
+                cell.appendChild(span);
+                row.appendChild(cell);
+
+                if ((firstDay + day) % 7 === 0) {
+                    tbody.appendChild(row);
+                    row = document.createElement('tr');
+                }
+                day++;
+            }
+            if (row.children.length) tbody.appendChild(row);
+            tbl.appendChild(tbody);
+        }
+
+        function render() {
+            populateSelects();
+            syncSelects();
+            renderCal('cal1', view1);
+            renderCal('cal2', view2);
+            updateRangeDisplay();
+        }
+
+        function onDayClick(e) {
+            const d = new Date(parseInt(e.currentTarget.dataset.ts));
+            if (!selecting || rangeEnd) {
+                rangeStart = d;
+                rangeEnd = null;
+                selecting = true;
+                setCustomPreset();
+            } else {
+                if (d < rangeStart) {
+                    rangeEnd = rangeStart;
+                    rangeStart = d;
+                } else {
+                    rangeEnd = d;
+                }
+                selecting = false;
+                setCustomPreset();
+            }
+            render();
+        }
+
+        function onDayHover(e) {
+            if (!selecting) return;
+            hoverDate = new Date(parseInt(e.currentTarget.dataset.ts));
+            render();
+        }
+
+        function setCustomPreset() {
+            document.querySelectorAll('.drp-preset').forEach(el => el.classList.remove('active'));
+            const el = document.querySelector('.drp-preset[data-preset="custom"]');
+            if (el) {
+                el.classList.add('active');
+                activePreset = 'custom';
+            }
+        }
+
+        function updateRangeDisplay() {
+            document.getElementById('rangeStartDisplay').textContent = fmt(rangeStart);
+            document.getElementById('rangeEndDisplay').textContent = fmt(rangeEnd);
+            if (rangeStart && rangeEnd) updateCompareDisplay();
+        }
+
+        function updateCompareDisplay() {
+            const sel = document.getElementById('comparePreset');
+            if (!sel || !document.getElementById('compareToggle').checked) return;
+            const diff = Math.round((rangeEnd - rangeStart) / 86400000);
+            let cs, ce;
+            if (sel.value === 'preceding') {
+                ce = new Date(rangeStart);
+                ce.setDate(ce.getDate() - 1);
+                cs = new Date(ce);
+                cs.setDate(cs.getDate() - diff);
+            } else if (sel.value === 'prev_year') {
+                cs = new Date(rangeStart);
+                cs.setFullYear(cs.getFullYear() - 1);
+                ce = new Date(rangeEnd);
+                ce.setFullYear(ce.getFullYear() - 1);
+            } else return;
+            document.getElementById('cmpStart').value = fmt(cs);
+            document.getElementById('cmpEnd').value = fmt(ce);
+        }
+
+        window.shiftMonths = function(dir) {
+            view1 = new Date(view1.getFullYear(), view1.getMonth() + dir, 1);
+            view2 = new Date(view2.getFullYear(), view2.getMonth() + dir, 1);
+            render();
+        };
+        window.onMonthChange = function(idx) {
+            if (idx === 0) view1 = new Date(view1.getFullYear(), parseInt(document.getElementById('month1Sel').value), 1);
+            else view2 = new Date(view2.getFullYear(), parseInt(document.getElementById('month2Sel').value), 1);
+            render();
+        };
+        window.onYearChange = function(idx) {
+            if (idx === 0) view1 = new Date(parseInt(document.getElementById('year1Sel').value), view1.getMonth(), 1);
+            else view2 = new Date(parseInt(document.getElementById('year2Sel').value), view2.getMonth(), 1);
+            render();
+        };
+
+        document.querySelectorAll('.drp-preset').forEach(el => {
+            el.addEventListener('click', function() {
+                activePreset = this.dataset.preset;
+                document.querySelectorAll('.drp-preset').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                const [s, e] = presetMap[activePreset]();
+                rangeStart = s;
+                rangeEnd = e;
+                selecting = false;
+                hoverDate = null;
+                if (s) {
+                    view1 = new Date(s.getFullYear(), s.getMonth(), 1);
+                    view2 = new Date(s.getFullYear(), s.getMonth() + 1, 1);
+                }
+                render();
+            });
+        });
+
+        window.toggleCompare = function() {
+            const on = document.getElementById('compareToggle').checked;
+            document.getElementById('compareInputs').style.display = on ? 'flex' : 'none';
+            if (on) updateCompareDisplay();
+        };
+
+        window.toggleDatePicker = function() {
+            const panel = document.getElementById('dateRangePanel');
+            const trigger = document.getElementById('dateRangeTrigger');
+            if (panel.style.display !== 'none') {
+                closeDatePicker();
+                return;
+            }
+
+            const rect = trigger.getBoundingClientRect();
+            panel.style.top = (rect.bottom + 6) + 'px';
+            panel.style.left = rect.left + 'px';
+            panel.style.display = 'flex';
+
+            // Clamp to viewport
+            const pw = panel.offsetWidth;
+            if (rect.left + pw > window.innerWidth - 16)
+                panel.style.left = Math.max(8, window.innerWidth - pw - 16) + 'px';
+
+            trigger.classList.add('open');
+            render();
+        };
+
+        function closeDatePicker() {
+            document.getElementById('dateRangePanel').style.display = 'none';
+            document.getElementById('dateRangeTrigger').classList.remove('open');
+        }
+
+        window.cancelDatePicker = function() {
+            closeDatePicker();
+        };
+
+        window.applyDatePicker = function() {
+            let display = presetLabels[activePreset] || 'Custom Range';
+            if (activePreset === 'custom' && rangeStart && rangeEnd)
+                display = fmt(rangeStart) + ' — ' + fmt(rangeEnd);
+            document.getElementById('drpLabel').textContent = display;
+
+            // Update card subtitle
+            const sub = document.getElementById('drpActiveSub');
+            if (sub) sub.textContent = display + ' · 147 total · 38 hot leads';
+
+            closeDatePicker();
+            document.dispatchEvent(new CustomEvent('dateRangeApplied', {
+                detail: {
+                    preset: activePreset,
+                    start: rangeStart,
+                    end: rangeEnd
+                }
+            }));
+        };
+
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('dateRangePanel');
+            const trigger = document.getElementById('dateRangeTrigger');
+            if (panel && panel.style.display !== 'none' &&
+                !panel.contains(e.target) && !trigger.contains(e.target))
+                closeDatePicker();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            populateSelects();
+            const [s, e] = presetMap['last7']();
+            rangeStart = s;
+            rangeEnd = e;
+            document.getElementById('drpLabel').textContent = 'Last 7 Days';
+        });
+    })();
+
+
+    /* ═══════════════════════════════════════════
+       PHONE / EMAIL MULTI-ROW
+    ═══════════════════════════════════════════ */
+    const COUNTRIES = [{
+            f: "🇦🇫",
+            n: "Afghanistan",
+            c: "+93"
+        }, {
+            f: "🇦🇱",
+            n: "Albania",
+            c: "+355"
+        }, {
+            f: "🇩🇿",
+            n: "Algeria",
+            c: "+213"
+        },
+        {
+            f: "🇦🇩",
+            n: "Andorra",
+            c: "+376"
+        }, {
+            f: "🇦🇴",
+            n: "Angola",
+            c: "+244"
+        }, {
+            f: "🇦🇷",
+            n: "Argentina",
+            c: "+54"
+        },
+        {
+            f: "🇦🇲",
+            n: "Armenia",
+            c: "+374"
+        }, {
+            f: "🇦🇺",
+            n: "Australia",
+            c: "+61"
+        }, {
+            f: "🇦🇹",
+            n: "Austria",
+            c: "+43"
+        },
+        {
+            f: "🇦🇿",
+            n: "Azerbaijan",
+            c: "+994"
+        }, {
+            f: "🇧🇸",
+            n: "Bahamas",
+            c: "+1-242"
+        }, {
+            f: "🇧🇭",
+            n: "Bahrain",
+            c: "+973"
+        },
+        {
+            f: "🇧🇩",
+            n: "Bangladesh",
+            c: "+880"
+        }, {
+            f: "🇧🇾",
+            n: "Belarus",
+            c: "+375"
+        }, {
+            f: "🇧🇪",
+            n: "Belgium",
+            c: "+32"
+        },
+        {
+            f: "🇧🇿",
+            n: "Belize",
+            c: "+501"
+        }, {
+            f: "🇧🇯",
+            n: "Benin",
+            c: "+229"
+        }, {
+            f: "🇧🇹",
+            n: "Bhutan",
+            c: "+975"
+        },
+        {
+            f: "🇧🇴",
+            n: "Bolivia",
+            c: "+591"
+        }, {
+            f: "🇧🇦",
+            n: "Bosnia",
+            c: "+387"
+        }, {
+            f: "🇧🇼",
+            n: "Botswana",
+            c: "+267"
+        },
+        {
+            f: "🇧🇷",
+            n: "Brazil",
+            c: "+55"
+        }, {
+            f: "🇧🇳",
+            n: "Brunei",
+            c: "+673"
+        }, {
+            f: "🇧🇬",
+            n: "Bulgaria",
+            c: "+359"
+        },
+        {
+            f: "🇧🇫",
+            n: "Burkina Faso",
+            c: "+226"
+        }, {
+            f: "🇧🇮",
+            n: "Burundi",
+            c: "+257"
+        }, {
+            f: "🇨🇻",
+            n: "Cabo Verde",
+            c: "+238"
+        },
+        {
+            f: "🇰🇭",
+            n: "Cambodia",
+            c: "+855"
+        }, {
+            f: "🇨🇲",
+            n: "Cameroon",
+            c: "+237"
+        }, {
+            f: "🇨🇦",
+            n: "Canada",
+            c: "+1"
+        },
+        {
+            f: "🇨🇫",
+            n: "Central African Rep.",
+            c: "+236"
+        }, {
+            f: "🇹🇩",
+            n: "Chad",
+            c: "+235"
+        }, {
+            f: "🇨🇱",
+            n: "Chile",
+            c: "+56"
+        },
+        {
+            f: "🇨🇳",
+            n: "China",
+            c: "+86"
+        }, {
+            f: "🇨🇴",
+            n: "Colombia",
+            c: "+57"
+        }, {
+            f: "🇰🇲",
+            n: "Comoros",
+            c: "+269"
+        },
+        {
+            f: "🇨🇩",
+            n: "Congo (DRC)",
+            c: "+243"
+        }, {
+            f: "🇨🇬",
+            n: "Congo (Rep.)",
+            c: "+242"
+        }, {
+            f: "🇨🇷",
+            n: "Costa Rica",
+            c: "+506"
+        },
+        {
+            f: "🇭🇷",
+            n: "Croatia",
+            c: "+385"
+        }, {
+            f: "🇨🇺",
+            n: "Cuba",
+            c: "+53"
+        }, {
+            f: "🇨🇾",
+            n: "Cyprus",
+            c: "+357"
+        },
+        {
+            f: "🇨🇿",
+            n: "Czech Republic",
+            c: "+420"
+        }, {
+            f: "🇩🇰",
+            n: "Denmark",
+            c: "+45"
+        }, {
+            f: "🇩🇯",
+            n: "Djibouti",
+            c: "+253"
+        },
+        {
+            f: "🇩🇴",
+            n: "Dominican Rep.",
+            c: "+1-809"
+        }, {
+            f: "🇪🇨",
+            n: "Ecuador",
+            c: "+593"
+        }, {
+            f: "🇪🇬",
+            n: "Egypt",
+            c: "+20"
+        },
+        {
+            f: "🇸🇻",
+            n: "El Salvador",
+            c: "+503"
+        }, {
+            f: "🇬🇶",
+            n: "Equatorial Guinea",
+            c: "+240"
+        }, {
+            f: "🇪🇷",
+            n: "Eritrea",
+            c: "+291"
+        },
+        {
+            f: "🇪🇪",
+            n: "Estonia",
+            c: "+372"
+        }, {
+            f: "🇸🇿",
+            n: "Eswatini",
+            c: "+268"
+        }, {
+            f: "🇪🇹",
+            n: "Ethiopia",
+            c: "+251"
+        },
+        {
+            f: "🇫🇯",
+            n: "Fiji",
+            c: "+679"
+        }, {
+            f: "🇫🇮",
+            n: "Finland",
+            c: "+358"
+        }, {
+            f: "🇫🇷",
+            n: "France",
+            c: "+33"
+        },
+        {
+            f: "🇬🇦",
+            n: "Gabon",
+            c: "+241"
+        }, {
+            f: "🇬🇲",
+            n: "Gambia",
+            c: "+220"
+        }, {
+            f: "🇬🇪",
+            n: "Georgia",
+            c: "+995"
+        },
+        {
+            f: "🇩🇪",
+            n: "Germany",
+            c: "+49"
+        }, {
+            f: "🇬🇭",
+            n: "Ghana",
+            c: "+233"
+        }, {
+            f: "🇬🇷",
+            n: "Greece",
+            c: "+30"
+        },
+        {
+            f: "🇬🇹",
+            n: "Guatemala",
+            c: "+502"
+        }, {
+            f: "🇬🇳",
+            n: "Guinea",
+            c: "+224"
+        }, {
+            f: "🇬🇼",
+            n: "Guinea-Bissau",
+            c: "+245"
+        },
+        {
+            f: "🇬🇾",
+            n: "Guyana",
+            c: "+592"
+        }, {
+            f: "🇭🇹",
+            n: "Haiti",
+            c: "+509"
+        }, {
+            f: "🇭🇳",
+            n: "Honduras",
+            c: "+504"
+        },
+        {
+            f: "🇭🇺",
+            n: "Hungary",
+            c: "+36"
+        }, {
+            f: "🇮🇸",
+            n: "Iceland",
+            c: "+354"
+        }, {
+            f: "🇮🇳",
+            n: "India",
+            c: "+91"
+        },
+        {
+            f: "🇮🇩",
+            n: "Indonesia",
+            c: "+62"
+        }, {
+            f: "🇮🇷",
+            n: "Iran",
+            c: "+98"
+        }, {
+            f: "🇮🇶",
+            n: "Iraq",
+            c: "+964"
+        },
+        {
+            f: "🇮🇪",
+            n: "Ireland",
+            c: "+353"
+        }, {
+            f: "🇮🇱",
+            n: "Israel",
+            c: "+972"
+        }, {
+            f: "🇮🇹",
+            n: "Italy",
+            c: "+39"
+        },
+        {
+            f: "🇯🇲",
+            n: "Jamaica",
+            c: "+1-876"
+        }, {
+            f: "🇯🇵",
+            n: "Japan",
+            c: "+81"
+        }, {
+            f: "🇯🇴",
+            n: "Jordan",
+            c: "+962"
+        },
+        {
+            f: "🇰🇿",
+            n: "Kazakhstan",
+            c: "+7"
+        }, {
+            f: "🇰🇪",
+            n: "Kenya",
+            c: "+254"
+        }, {
+            f: "🇰🇼",
+            n: "Kuwait",
+            c: "+965"
+        },
+        {
+            f: "🇰🇬",
+            n: "Kyrgyzstan",
+            c: "+996"
+        }, {
+            f: "🇱🇦",
+            n: "Laos",
+            c: "+856"
+        }, {
+            f: "🇱🇻",
+            n: "Latvia",
+            c: "+371"
+        },
+        {
+            f: "🇱🇧",
+            n: "Lebanon",
+            c: "+961"
+        }, {
+            f: "🇱🇸",
+            n: "Lesotho",
+            c: "+266"
+        }, {
+            f: "🇱🇷",
+            n: "Liberia",
+            c: "+231"
+        },
+        {
+            f: "🇱🇾",
+            n: "Libya",
+            c: "+218"
+        }, {
+            f: "🇱🇮",
+            n: "Liechtenstein",
+            c: "+423"
+        }, {
+            f: "🇱🇹",
+            n: "Lithuania",
+            c: "+370"
+        },
+        {
+            f: "🇱🇺",
+            n: "Luxembourg",
+            c: "+352"
+        }, {
+            f: "🇲🇬",
+            n: "Madagascar",
+            c: "+261"
+        }, {
+            f: "🇲🇼",
+            n: "Malawi",
+            c: "+265"
+        },
+        {
+            f: "🇲🇾",
+            n: "Malaysia",
+            c: "+60"
+        }, {
+            f: "🇲🇻",
+            n: "Maldives",
+            c: "+960"
+        }, {
+            f: "🇲🇱",
+            n: "Mali",
+            c: "+223"
+        },
+        {
+            f: "🇲🇹",
+            n: "Malta",
+            c: "+356"
+        }, {
+            f: "🇲🇷",
+            n: "Mauritania",
+            c: "+222"
+        }, {
+            f: "🇲🇺",
+            n: "Mauritius",
+            c: "+230"
+        },
+        {
+            f: "🇲🇽",
+            n: "Mexico",
+            c: "+52"
+        }, {
+            f: "🇲🇩",
+            n: "Moldova",
+            c: "+373"
+        }, {
+            f: "🇲🇨",
+            n: "Monaco",
+            c: "+377"
+        },
+        {
+            f: "🇲🇳",
+            n: "Mongolia",
+            c: "+976"
+        }, {
+            f: "🇲🇪",
+            n: "Montenegro",
+            c: "+382"
+        }, {
+            f: "🇲🇦",
+            n: "Morocco",
+            c: "+212"
+        },
+        {
+            f: "🇲🇿",
+            n: "Mozambique",
+            c: "+258"
+        }, {
+            f: "🇲🇲",
+            n: "Myanmar",
+            c: "+95"
+        }, {
+            f: "🇳🇦",
+            n: "Namibia",
+            c: "+264"
+        },
+        {
+            f: "🇳🇵",
+            n: "Nepal",
+            c: "+977"
+        }, {
+            f: "🇳🇱",
+            n: "Netherlands",
+            c: "+31"
+        }, {
+            f: "🇳🇿",
+            n: "New Zealand",
+            c: "+64"
+        },
+        {
+            f: "🇳🇮",
+            n: "Nicaragua",
+            c: "+505"
+        }, {
+            f: "🇳🇪",
+            n: "Niger",
+            c: "+227"
+        }, {
+            f: "🇳🇬",
+            n: "Nigeria",
+            c: "+234"
+        },
+        {
+            f: "🇳🇴",
+            n: "Norway",
+            c: "+47"
+        }, {
+            f: "🇴🇲",
+            n: "Oman",
+            c: "+968"
+        }, {
+            f: "🇵🇰",
+            n: "Pakistan",
+            c: "+92"
+        },
+        {
+            f: "🇵🇦",
+            n: "Panama",
+            c: "+507"
+        }, {
+            f: "🇵🇬",
+            n: "Papua New Guinea",
+            c: "+675"
+        }, {
+            f: "🇵🇾",
+            n: "Paraguay",
+            c: "+595"
+        },
+        {
+            f: "🇵🇪",
+            n: "Peru",
+            c: "+51"
+        }, {
+            f: "🇵🇭",
+            n: "Philippines",
+            c: "+63"
+        }, {
+            f: "🇵🇱",
+            n: "Poland",
+            c: "+48"
+        },
+        {
+            f: "🇵🇹",
+            n: "Portugal",
+            c: "+351"
+        }, {
+            f: "🇶🇦",
+            n: "Qatar",
+            c: "+974"
+        }, {
+            f: "🇷🇴",
+            n: "Romania",
+            c: "+40"
+        },
+        {
+            f: "🇷🇺",
+            n: "Russia",
+            c: "+7"
+        }, {
+            f: "🇷🇼",
+            n: "Rwanda",
+            c: "+250"
+        }, {
+            f: "🇸🇦",
+            n: "Saudi Arabia",
+            c: "+966"
+        },
+        {
+            f: "🇸🇳",
+            n: "Senegal",
+            c: "+221"
+        }, {
+            f: "🇷🇸",
+            n: "Serbia",
+            c: "+381"
+        }, {
+            f: "🇸🇱",
+            n: "Sierra Leone",
+            c: "+232"
+        },
+        {
+            f: "🇸🇬",
+            n: "Singapore",
+            c: "+65"
+        }, {
+            f: "🇸🇰",
+            n: "Slovakia",
+            c: "+421"
+        }, {
+            f: "🇸🇮",
+            n: "Slovenia",
+            c: "+386"
+        },
+        {
+            f: "🇸🇴",
+            n: "Somalia",
+            c: "+252"
+        }, {
+            f: "🇿🇦",
+            n: "South Africa",
+            c: "+27"
+        }, {
+            f: "🇸🇸",
+            n: "South Sudan",
+            c: "+211"
+        },
+        {
+            f: "🇪🇸",
+            n: "Spain",
+            c: "+34"
+        }, {
+            f: "🇱🇰",
+            n: "Sri Lanka",
+            c: "+94"
+        }, {
+            f: "🇸🇩",
+            n: "Sudan",
+            c: "+249"
+        },
+        {
+            f: "🇸🇷",
+            n: "Suriname",
+            c: "+597"
+        }, {
+            f: "🇸🇪",
+            n: "Sweden",
+            c: "+46"
+        }, {
+            f: "🇨🇭",
+            n: "Switzerland",
+            c: "+41"
+        },
+        {
+            f: "🇸🇾",
+            n: "Syria",
+            c: "+963"
+        }, {
+            f: "🇹🇼",
+            n: "Taiwan",
+            c: "+886"
+        }, {
+            f: "🇹🇯",
+            n: "Tajikistan",
+            c: "+992"
+        },
+        {
+            f: "🇹🇿",
+            n: "Tanzania",
+            c: "+255"
+        }, {
+            f: "🇹🇭",
+            n: "Thailand",
+            c: "+66"
+        }, {
+            f: "🇹🇱",
+            n: "Timor-Leste",
+            c: "+670"
+        },
+        {
+            f: "🇹🇬",
+            n: "Togo",
+            c: "+228"
+        }, {
+            f: "🇹🇹",
+            n: "Trinidad & Tobago",
+            c: "+1-868"
+        }, {
+            f: "🇹🇳",
+            n: "Tunisia",
+            c: "+216"
+        },
+        {
+            f: "🇹🇷",
+            n: "Turkey",
+            c: "+90"
+        }, {
+            f: "🇹🇲",
+            n: "Turkmenistan",
+            c: "+993"
+        }, {
+            f: "🇺🇬",
+            n: "Uganda",
+            c: "+256"
+        },
+        {
+            f: "🇺🇦",
+            n: "Ukraine",
+            c: "+380"
+        }, {
+            f: "🇦🇪",
+            n: "UAE",
+            c: "+971"
+        }, {
+            f: "🇬🇧",
+            n: "United Kingdom",
+            c: "+44"
+        },
+        {
+            f: "🇺🇸",
+            n: "USA",
+            c: "+1"
+        }, {
+            f: "🇺🇾",
+            n: "Uruguay",
+            c: "+598"
+        }, {
+            f: "🇺🇿",
+            n: "Uzbekistan",
+            c: "+998"
+        },
+        {
+            f: "🇻🇪",
+            n: "Venezuela",
+            c: "+58"
+        }, {
+            f: "🇻🇳",
+            n: "Vietnam",
+            c: "+84"
+        }, {
+            f: "🇾🇪",
+            n: "Yemen",
+            c: "+967"
+        },
+        {
+            f: "🇿🇲",
+            n: "Zambia",
+            c: "+260"
+        }, {
+            f: "🇿🇼",
+            n: "Zimbabwe",
+            c: "+263"
+        }
+    ];
+    const INDIA_IDX = COUNTRIES.findIndex(c => c.n === "India");
+
+    function buildCountrySel() {
+        const sel = document.createElement('select');
+        sel.className = 'country-sel';
+        COUNTRIES.forEach((c, i) => {
+            const o = document.createElement('option');
+            o.value = i;
+            o.textContent = c.f + ' ' + c.c;
+            o.title = c.n;
+            sel.appendChild(o);
+        });
+        sel.value = INDIA_IDX >= 0 ? INDIA_IDX : 0;
+        return sel;
+    }
+
+    function addPhoneRow(listId, removable = null) {
+        const list = document.getElementById(listId);
+        const canRemove = removable !== null ? removable : list.children.length > 0;
+        const row = document.createElement('div');
+        row.className = 'multi-row';
+        const wrap = document.createElement('div');
+        wrap.className = 'phone-wrap form-inp';
+        wrap.style.cssText = 'padding:0;display:flex;align-items:center;';
+        wrap.appendChild(buildCountrySel());
+        const inp = document.createElement('input');
+        inp.type = 'tel';
+        inp.className = 'phone-num-inp';
+        inp.placeholder = 'XXXXX XXXXX';
+        wrap.appendChild(inp);
+        row.appendChild(wrap);
+        if (canRemove) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'row-remove-btn';
+            btn.innerHTML = '<i class="bi bi-x-lg"></i>';
+            btn.onclick = () => row.remove();
+            row.appendChild(btn);
+        }
+        list.appendChild(row);
+    }
+
+    function addEmailRow(listId, removable = null) {
+        const list = document.getElementById(listId);
+        const canRemove = removable !== null ? removable : list.children.length > 0;
+        const row = document.createElement('div');
+        row.className = 'multi-row';
+        const inp = document.createElement('input');
+        inp.type = 'email';
+        inp.className = 'form-inp multi-email-inp';
+        inp.placeholder = 'email@company.com';
+        row.appendChild(inp);
+        if (canRemove) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'row-remove-btn';
+            btn.innerHTML = '<i class="bi bi-x-lg"></i>';
+            btn.onclick = () => row.remove();
+            row.appendChild(btn);
+        }
+        list.appendChild(row);
+    }
+
+    function initModalRows(modalId) {
+        const prefixes = {
+            addLeadModal: 'add',
+            editLeadModal: 'edit'
+        };
+        const p = prefixes[modalId];
+        if (!p) return;
+        const el = document.getElementById(p + '-email-list');
+        const pl = document.getElementById(p + '-phone-list');
+        if (el && el.children.length === 0) addEmailRow(p + '-email-list');
+        if (pl && pl.children.length === 0) addPhoneRow(p + '-phone-list');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ['addLeadModal', 'editLeadModal'].forEach(id => initModalRows(id));
+    });
+
+    const _origOpenModal = typeof openModal === 'function' ? openModal : null;
+
+    function openModal(id) {
+        if (_origOpenModal) _origOpenModal(id);
+        initModalRows(id);
+    }
+
+    window.updateFilters = function () {
+        const form = document.querySelector('.card-actions form') || document.querySelector('.card-actions');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+        const url = new URL(window.location.pathname, window.location.origin);
+        url.search = params.toString();
+        fetchAndReplace(url);
+    };
+
+    async function fetchAndReplace(url) {
+        const tableWrap = document.getElementById('tableWrap');
+        const statsWrap = document.getElementById('statsWrap');
+        if (tableWrap) tableWrap.style.opacity = '0.5';
+
+        try {
+            const response = await fetch(url.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const newTable = doc.getElementById('tableWrap');
+            if (newTable && tableWrap) {
+                tableWrap.innerHTML = newTable.innerHTML;
+            }
+
+            const newStats = doc.getElementById('statsWrap');
+            if (newStats && statsWrap) {
+                statsWrap.innerHTML = newStats.innerHTML;
+            }
+
+            const newSub = doc.getElementById('tableSub');
+            const oldSub = document.getElementById('tableSub');
+            if (newSub && oldSub) {
+                oldSub.innerHTML = newSub.innerHTML;
+            }
+
+            if (tableWrap) tableWrap.style.opacity = '1';
+            window.history.pushState({}, '', url);
+        } catch (error) {
+            console.error('AJAX error:', error);
+            if (tableWrap) tableWrap.style.opacity = '1';
+        }
+    }
+
+    /* ── Listen for date range applied from our custom picker ── */
+    document.addEventListener('dateRangeApplied', function(e) {
+        const { start, end } = e.detail;
+        
+        function formatDate(date) {
+            if(!date) return '';
+            let d = new Date(date),
+                month = '' + (d.getMonth() + 1),
+                day = '' + d.getDate(),
+                year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            return [year, month, day].join('-');
+        }
+
+        const sInp = document.getElementById('drpStartInput');
+        const eInp = document.getElementById('drpEndInput');
+        if(sInp && eInp) {
+            sInp.value = formatDate(start);
+            eInp.value = formatDate(end);
+            updateFilters();
+        }
+    });
+    
+    let l_debounceTimer;
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'searchQuery') {
+            clearTimeout(l_debounceTimer);
+            l_debounceTimer = setTimeout(updateFilters, 500);
+        }
+    });
+
+    // Intercept pagination clicks
+    document.addEventListener('click', function (e) {
+        const paginationLink = e.target.closest('.tf-pagination a');
+        if (paginationLink) {
+            e.preventDefault();
+            fetchAndReplace(new URL(paginationLink.href));
+        }
+    });
+
+    function exportLostedLeads() {
+        const form = document.querySelector('.card-actions form');
+        if(form) {
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            let exportUrl = '{{ route($routePrefix . '.losted-leads.export') }}';
+            window.location.href = exportUrl + '?' + params.toString();
+        } else {
+            window.location.href = '{{ route($routePrefix . '.losted-leads.export') }}';
+        }
+    }
+</script>
+
+@endsection

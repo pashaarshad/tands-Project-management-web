@@ -17,7 +17,9 @@ return new class extends Migration
             $json = json_encode([$support->attachment]);
             \DB::table('supports')->where('id', $support->id)->update(['attachment' => $json]);
         }
-        \DB::statement("ALTER TABLE supports MODIFY attachment JSON NULL");
+        if (\DB::getDriverName() !== 'sqlite') {
+            \DB::statement("ALTER TABLE supports MODIFY attachment JSON NULL");
+        }
     }
 
     /**
@@ -25,7 +27,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \DB::statement("ALTER TABLE supports MODIFY attachment VARCHAR(255) NULL");
+        if (\DB::getDriverName() !== 'sqlite') {
+            \DB::statement("ALTER TABLE supports MODIFY attachment VARCHAR(255) NULL");
+        }
         
         $supports = \DB::table('supports')->whereNotNull('attachment')->get();
         foreach ($supports as $support) {

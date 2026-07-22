@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        \DB::statement("ALTER TABLE supports MODIFY COLUMN status ENUM('pending', 'active', 'review', 'replied', 'closed') DEFAULT 'pending'");
+        if (\DB::getDriverName() !== 'sqlite') {
+            \DB::statement("ALTER TABLE supports MODIFY COLUMN status ENUM('pending', 'active', 'review', 'replied', 'closed') DEFAULT 'pending'");
+        }
     }
 
     /**
@@ -19,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \DB::statement("ALTER TABLE supports MODIFY COLUMN status ENUM('pending', 'review', 'replied', 'closed') DEFAULT 'pending'");
+        if (\DB::getDriverName() !== 'sqlite') {
+            \DB::statement("ALTER TABLE supports MODIFY COLUMN status ENUM('pending', 'review', 'replied', 'closed') DEFAULT 'pending'");
+        }
     }
 };

@@ -1,11 +1,5 @@
-* text=auto eol=lf
+# Git Attributes Configuration
+# Preserve local versions of documentation files during git merges
 
-*.blade.php diff=html
-*.css diff=css
-*.html diff=html
-*.md diff=markdown
-*.php diff=php
-
-CHANGELOG.md export-ignore
-README.md export-ignore
-.github/workflows/browser-tests.yml export-ignore
+starting.md merge=ours
+summary.md merge=ours

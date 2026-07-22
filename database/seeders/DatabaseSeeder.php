@@ -57,7 +57,7 @@ class DatabaseSeeder extends Seeder
         // Seed Services
         $services = ['Website Design', 'App Development', 'Digital Marketing', 'SEO', 'Social Media'];
         foreach ($services as $s) {
-            \App\Models\Service::create(['name' => $s]);
+            \App\Models\Service::create(['name' => $s, 'created_by' => 1]);
         }
     }
 }
